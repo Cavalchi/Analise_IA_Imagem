@@ -132,8 +132,9 @@ class MainMenu:
             # Copie o arquivo para a pasta de imagens
             shutil.copy(filepath, 'imagens')
             self.image_path = filepath  # Armazene o caminho da imagem
-def analyze_image_with_menu(menu, image_path):
-    return menu.analyze_image(image_path)    
+    def analyze_image(self):
+        if self.image_path:
+            result = analyze_image_feed(self, self.image_path)
 
 root = Tk()
 my_menu = MainMenu(root)
