@@ -1,52 +1,75 @@
-from tkinter import Tk, Label, Button, Toplevel, StringVar
+from tkinter import Tk, Label, Button, Toplevel, StringVar, ttk, Frame, Scrollbar, Canvas
 from tkinter.filedialog import askopenfilename
 from imagem import ImageSelector
 import shutil
-from PIL import Image
+from PIL import Image, ImageTk
 from pytorch import Net, transform, train_model  # Importar a classe Net, a função transform e a função train_model do pytorch.py
 import torch
-from PIL import Image
 import os
 import threading
-from feed import analyze_image_feed
 from torchvision import datasets
+from pytorch import analyze_image_pytorch  # Importar a função analyze_image_pytorch do pytorch.py
 class MainMenu:
     def __init__(self, master):
         self.master = master
         master.title("Menu principal")
         master.geometry("1000x700")  # Ajuste para metade do tamanho da sua tela
         master.configure(bg='navy')
+
+        # Get the directory of the current script'
         # Get the directory of the current script
         script_dir = os.path.dirname(os.path.abspath(__file__))
 
-        # Join the script directory with the relative path to 'imagensreferenca'
-        imagensreferenca_dir = os.path.join(script_dir, 'imagensreferenca')
+        # Get the parent directory
+        parent_dir = os.path.dirname(script_dir)
 
-            # Now use 'imagensreferenca_dir' instead of 'imagensreferenca'
+        # Join the script directory with the relative path to 'imagensreferenca'
+        imagensreferenca_dir = os.path.join(script_dir, 'imagensreferenca') 
+
+        # Now use 'imagensreferenca_dir' instead of 'imagensreferenca'
         train_dataset = datasets.ImageFolder(imagensreferenca_dir, transform=transform)      
         trainloader = torch.utils.data.DataLoader(train_dataset, batch_size=4, shuffle=True)
 
-        # Iniciar o treinamento da rede neural em uma thread separada
-        threading.Thread(target=train_model, args=(trainloader,)).start()  # Cor de fundo azul marinho
-
+        # Verifique se um estado de modelo salvo existe
+        if os.path.exists('save/model.pth'):
+            # Carregue o estado do modelo
+            self.model = Net()
+            self.model.load_state_dict(torch.load('save/model.pth'))
+        else:
+            # Treine o modelo
+            self.model = train_model(trainloader)
+            # Crie o diretório 'save' se ele não existir
+            if not os.path.exists('save'):
+                os.makedirs('save')
+            # Salve o estado do modelo
+            torch.save(self.model.state_dict(), 'save/model.pth')
+            # Iniciar o treinamento da rede neural em uma thread separada
+            threading.Thread(target=train_model, args=(trainloader,)).start()  # Cor de fundo azul marinho
         self.label = Label(master, text="Menu principal", bg='navy', fg='white')
         self.label.place(relx=0.5, rely=0.3, anchor='center')
-
-        self.load_button = Button(master, text="Escolher imagem", command=self.load_image)
-        self.load_button.place(relx=0.5, rely=0.4, anchor='center')
-
-        self.put_button = Button(master, text="Colocar imagem", command=self.put_image)
-        self.put_button.place(relx=0.5, rely=0.5, anchor='center')
-
-        self.analyze_button = Button(master, text="Analisar imagem", command=self.analyze_image)
-        self.analyze_button.place(relx=0.5, rely=0.6, anchor='center')
-
+        self.move_image_button = Button(master, text="Analisar e mover imagem", command=self.analyze_and_move_image)
+        self.move_image_button.place(relx=0.5, rely=0.8, anchor='center')
         self.explanation_button = Button(master, text="Explicação", command=self.show_explanation)
         self.explanation_button.place(relx=0.5, rely=0.7, anchor='center')
-    
-        self.image_path = None  # Variável para armazenar o caminho da imagem
 
+    import shutil
 
+    def analyze_and_move_image(self):
+        # Abra a janela de seleção de arquivo
+        filepath = askopenfilename(filetypes=[("Image files", "*.jpg *.png *.jpeg")])
+
+        if filepath:  # Se um arquivo foi selecionado
+            # Analise a imagem
+            result = analyze_image_pytorch(filepath)
+            print(f"A imagem foi classificada como: {result}")
+            correct = input("A classificação está correta? (s/n) ")
+            if correct.lower() == 's':
+                # Verifique se a pasta existe e, se não, crie a pasta
+                destination_folder = f'imagensreferenca/{result}'
+                if not os.path.exists(destination_folder):
+                    os.makedirs(destination_folder)
+                # Mova a imagem para a pasta correspondente
+                shutil.move(filepath, destination_folder)
     def show_explanation(self):
         explanation_window = Toplevel(self.master)
         explanation_window.title("Explicação")
@@ -126,16 +149,12 @@ class MainMenu:
 
     def put_image(self):
         # Abra a janela de seleção de arquivo
-        filepath = askopenfilename(filetypes=[("Image files", "*.jpg *.png")])
+        filepath = askopenfilename(filetypes=[("Image files", "*.jpg *.png *.jpeg")])
 
         if filepath:  # Se um arquivo foi selecionado
             # Copie o arquivo para a pasta de imagens
             shutil.copy(filepath, 'imagens')
             self.image_path = filepath  # Armazene o caminho da imagem
-    def analyze_image(self):
-        if self.image_path:
-            result = analyze_image_feed(self, self.image_path)
-
 root = Tk()
 my_menu = MainMenu(root)
 root.mainloop()
