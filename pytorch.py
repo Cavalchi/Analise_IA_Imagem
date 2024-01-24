@@ -39,7 +39,7 @@ def train_model(trainloader):
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
     # Loop de treinamento
-    for epoch in range(10):  # Treinar por 10 épocas
+    for epoch in range(50):  # Treinar por 50 épocas
         running_loss = 0.0
         for i, data in enumerate(trainloader, 0):
             # Obter as entradas
@@ -86,7 +86,7 @@ def analyze_image_pytorch(image_path):
     model = Net()
 
     # Loop sobre os estados salvos do modelo
-    for epoch in range(10):
+    for epoch in range(50):
         model.load_state_dict(torch.load(f'save/model_epoch_{epoch}.pth'))
         model.eval()  # Colocar o modelo em modo de avaliação
 
