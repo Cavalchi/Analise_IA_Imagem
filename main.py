@@ -70,6 +70,14 @@ class MainMenu:
                     os.makedirs(destination_folder)
                 # Mova a imagem para a pasta correspondente
                 shutil.move(filepath, destination_folder)
+            elif correct.lower() == 'n':
+                correct_class = input("Qual é a classe correta? ")
+                # Verifique se a pasta existe e, se não, crie a pasta
+                destination_folder = f'imagensreferenca/{correct_class}'
+                if not os.path.exists(destination_folder):
+                    os.makedirs(destination_folder)
+                # Mova a imagem para a pasta correspondente
+                shutil.move(filepath, destination_folder)
     def show_explanation(self):
         explanation_window = Toplevel(self.master)
         explanation_window.title("Explicação")
